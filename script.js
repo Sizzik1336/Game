@@ -127,6 +127,31 @@ const fmt = n => {
   return '$' + Math.floor(n);
 };
 
+// Calculate prestige multiplier based on current cash
+function calculatePrestigeMultiplier() {
+  const baseMultiplier = 1 + (state.prestigeLevel * 0.1);
+  
+  // Money-based bonus multiplier
+  let moneyBonus = 0;
+  if (state.totalCashEarned >= 1e12) moneyBonus = 0.5;      // $1T+: +50%
+  else if (state.totalCashEarned >= 1e9) moneyBonus = 0.4;  // $1B+: +40%
+  else if (state.totalCashEarned >= 1e6) moneyBonus = 0.3;  // $1M+: +30%
+  else if (state.totalCashEarned >= 1e3) moneyBonus = 0.2;  // $1K+: +20%
+  else if (state.totalCashEarned >= 100) moneyBonus = 0.1;  // $100+: +10%
+  
+  return baseMultiplier * (1 + moneyBonus);
+}
+
+// Get money bracket description
+function getMoneyBracket() {
+  if (state.totalCashEarned >= 1e12) return 'Trillion+ wealth (50% bonus)';
+  else if (state.totalCashEarned >= 1e9) return 'Billionaire (40% bonus)';
+  else if (state.totalCashEarned >= 1e6) return 'Millionaire (30% bonus)';
+  else if (state.totalCashEarned >= 1e3) return 'Wealthy (20% bonus)';
+  else if (state.totalCashEarned >= 100) return 'Comfortable (10% bonus)';
+  else return 'Starting out (0% bonus)';
+}
+
 // Render UI
 function render(){
   const playTime = Date.now() - state.sessionStartTime + state.timePlayedMs;
@@ -187,15 +212,17 @@ function render(){
   autoClickerDiv.appendChild(autoRight);
   itemsEl.appendChild(autoClickerDiv);
   
-  // Prestige button
+  // Prestige button with dynamic multiplier
   const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.1));
+  const prestigeMultiplier = calculatePrestigeMultiplier();
   const prestigeDiv = document.createElement('div');
   prestigeDiv.className = 'item';
   prestigeDiv.style.backgroundColor = '#523a1a';
   prestigeDiv.innerHTML = `
     <div>
       <div style="font-weight:600">✨ Prestige Reset</div>
-      <div class="small">Next multiplier: +${(1 + state.prestigeLevel * 0.1).toFixed(1)}x all income</div>
+      <div class="small">Next multiplier: ${prestigeMultiplier.toFixed(2)}x all income</div>
+      <div class="small" style="color: #ffd166; margin-top: 4px;">${getMoneyBracket()}</div>
     </div>
   `;
   const prestigeRight = document.createElement('div');
@@ -332,6 +359,7 @@ function buyAutoClicker(){
 function prestige(){
   const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.1));
   if (state.totalCashEarned >= prestigeCost) {
+    const currentMultiplier = calculatePrestigeMultiplier();
     state.prestigeLevel += 1;
     state.totalCashEarnedAllTime += state.totalCashEarned;
     
@@ -352,7 +380,7 @@ function prestige(){
     checkAchievements();
     recalcIncome();
     render();
-    alert(`Prestige! You are now level ${state.prestigeLevel} with ${(1 + state.prestigeLevel * 0.1).toFixed(1)}x multiplier!`);
+    alert(`Prestige! You are now level ${state.prestigeLevel} with ${currentMultiplier.toFixed(2)}x multiplier!`);
   }
 }
 
@@ -398,7 +426,7 @@ function checkMilestones(){
         state.milestoneProgress[m.id] = m.count;
         state.cash += m.bonus.cash;
         state.totalCashEarned += m.bonus.cash;
-        alert(`🎉 Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash`);
+        alert(`��� Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash`);
       }
     }
   });
@@ -416,7 +444,7 @@ function checkAchievements(){
 
 function recalcIncome(){
   let baseIncome = state.producers.reduce((s,p)=> s + p.owned * p.ips, 0);
-  let multiplier = 1 + (state.prestigeLevel * 0.1);
+  let multiplier = calculatePrestigeMultiplier();
   UPGRADES.forEach(u => {
     if(state.upgrades[u.id]){
       multiplier *= u.multiplier;
