@@ -129,7 +129,7 @@ const fmt = n => {
 
 // Calculate prestige multiplier based on current cash
 function calculatePrestigeMultiplier() {
-  const baseMultiplier = 1 + (state.prestigeLevel * 0.1);
+  const baseMultiplier = 1 + (state.prestigeLevel * 0.5);
   
   // Money-based bonus multiplier
   let moneyBonus = 0;
