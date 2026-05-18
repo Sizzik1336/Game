@@ -1,19 +1,31 @@
-// Simple tycoon core
+// Simple tycoon core with Cookie Clicker features
 const cashEl = document.getElementById('cash');
 const cashBtn = document.getElementById('cash-btn');
 const incomeEl = document.getElementById('income');
 const itemsEl = document.getElementById('items');
 const upgradesListEl = document.getElementById('upgrades-list');
+const clickAnimEl = document.getElementById('click-anim');
 
 let state = {
   cash: 0,
   incomePerSec: 0,
+  totalCashEarned: 0,
+  totalClicks: 0,
   producers: [],
-  upgrades: {}
+  upgrades: {},
+  // Auto-clicker
+  autoClickerLevel: 0,
+  autoClickerUnlocked: false,
+  autoClickRate: 0,
+  // Prestige
+  prestigeLevel: 0,
+  totalCashEarnedAllTime: 0,
+  // Offline
+  lastSaveTime: Date.now(),
+  offlineEarnings: 0
 };
 
 // Define shop items (id, name, baseCost, incomePerSec)
-// Each item costs 10x and earns 10x the previous one
 const SHOP = [
   { id:'worker', name:'Worker', baseCost: 10, ips: 2 },
   { id:'apprentice', name:'Apprentice', baseCost: 100, ips: 20 },
@@ -66,58 +78,26 @@ const SHOP = [
 ];
 
 // Define upgrades (id, name, baseCost, multiplier)
-// Each upgrade multiplies cost and income by 10
 const UPGRADES = [
-  { id:'upgrade-1', name:'Better Tools', baseCost: 50, multiplier: 10 },
-  { id:'upgrade-2', name:'Automation', baseCost: 500, multiplier: 10 },
-  { id:'upgrade-3', name:'Efficiency', baseCost: 5000, multiplier: 10 },
-  { id:'upgrade-4', name:'Computerization', baseCost: 50000, multiplier: 10 },
-  { id:'upgrade-5', name:'AI Integration', baseCost: 500000, multiplier: 10 },
-  { id:'upgrade-6', name:'Quantum Computing', baseCost: 5000000, multiplier: 10 },
-  { id:'upgrade-7', name:'Neural Network', baseCost: 50000000, multiplier: 10 },
-  { id:'upgrade-8', name:'Consciousness Upload', baseCost: 500000000, multiplier: 10 },
-  { id:'upgrade-9', name:'Dimensional Gateway', baseCost: 5000000000, multiplier: 10 },
-  { id:'upgrade-10', name:'Time Manipulation', baseCost: 50000000000, multiplier: 10 },
-  { id:'upgrade-11', name:'Space Folding', baseCost: 500000000000, multiplier: 10 },
-  { id:'upgrade-12', name:'Reality Bending', baseCost: 5000000000000, multiplier: 10 },
-  { id:'upgrade-13', name:'Matter Creation', baseCost: 50000000000000, multiplier: 10 },
-  { id:'upgrade-14', name:'Energy Manipulation', baseCost: 500000000000000, multiplier: 10 },
-  { id:'upgrade-15', name:'Force Projection', baseCost: 5000000000000000, multiplier: 10 },
-  { id:'upgrade-16', name:'Gravity Control', baseCost: 50000000000000000, multiplier: 10 },
-  { id:'upgrade-17', name:'Atom Splitting', baseCost: 500000000000000000, multiplier: 10 },
-  { id:'upgrade-18', name:'Star Harnessing', baseCost: 5000000000000000000, multiplier: 10 },
-  { id:'upgrade-19', name:'Black Hole Tapping', baseCost: 50000000000000000000, multiplier: 10 },
-  { id:'upgrade-20', name:'Universe Expansion', baseCost: 500000000000000000000, multiplier: 10 },
-  { id:'upgrade-21', name:'Multiverse Access', baseCost: 5000000000000000000000, multiplier: 10 },
-  { id:'upgrade-22', name:'Parallel Dimension', baseCost: 50000000000000000000000, multiplier: 10 },
-  { id:'upgrade-23', name:'Infinite Energy', baseCost: 500000000000000000000000, multiplier: 10 },
-  { id:'upgrade-24', name:'Reality Duplication', baseCost: 5000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-25', name:'Godlike Powers', baseCost: 50000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-26', name:'Omniscience', baseCost: 500000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-27', name:'Omnipotence', baseCost: 5000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-28', name:'Transcendence', baseCost: 50000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-29', name:'Ascension', baseCost: 500000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-30', name:'Apotheosis', baseCost: 5000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-31', name:'Absoluteness', baseCost: 50000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-32', name:'Eternality', baseCost: 500000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-33', name:'Infinity Embrace', baseCost: 5000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-34', name:'Totality', baseCost: 50000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-35', name:'Supreme Order', baseCost: 500000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-36', name:'Cosmic Harmony', baseCost: 5000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-37', name:'Unified Field', baseCost: 50000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-38', name:'Perfect Synthesis', baseCost: 500000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-39', name:'Meta Existence', baseCost: 5000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-40', name:'Hyper Reality', baseCost: 50000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-41', name:'Ultra Dimension', baseCost: 500000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-42', name:'Mega Structure', baseCost: 5000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-43', name:'Giga Force', baseCost: 50000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-44', name:'Tera Expansion', baseCost: 500000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-45', name:'Peta Evolution', baseCost: 5000000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-46', name:'Exa Revolution', baseCost: 50000000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-47', name:'Zetta Supremacy', baseCost: 500000000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-48', name:'Yotta Domination', baseCost: 5000000000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-49', name:'Ronna Infinity', baseCost: 50000000000000000000000000000000000000000000000000, multiplier: 10 },
-  { id:'upgrade-50', name:'Quetta Eternity', baseCost: 500000000000000000000000000000000000000000000000000, multiplier: 10 }
+  { id:'upgrade-1', name:'Better Tools', baseCost: 50, multiplier: 1.5 },
+  { id:'upgrade-2', name:'Automation', baseCost: 500, multiplier: 1.5 },
+  { id:'upgrade-3', name:'Efficiency', baseCost: 5000, multiplier: 1.5 },
+  { id:'upgrade-4', name:'Computerization', baseCost: 50000, multiplier: 1.5 },
+  { id:'upgrade-5', name:'AI Integration', baseCost: 500000, multiplier: 1.5 },
+  { id:'upgrade-6', name:'Quantum Computing', baseCost: 5000000, multiplier: 1.5 },
+  { id:'upgrade-7', name:'Neural Network', baseCost: 50000000, multiplier: 1.5 },
+  { id:'upgrade-8', name:'Consciousness Upload', baseCost: 500000000, multiplier: 1.5 },
+  { id:'upgrade-9', name:'Dimensional Gateway', baseCost: 5000000000, multiplier: 1.5 },
+  { id:'upgrade-10', name:'Time Manipulation', baseCost: 50000000000, multiplier: 1.5 }
+];
+
+// Auto-clicker upgrades
+const AUTO_CLICKER_UPGRADES = [
+  { id: 'auto-clicker-1', name: 'Auto-Clicker LV1', baseCost: 5000, rate: 1 },
+  { id: 'auto-clicker-2', name: 'Auto-Clicker LV2', baseCost: 50000, rate: 5 },
+  { id: 'auto-clicker-3', name: 'Auto-Clicker LV3', baseCost: 500000, rate: 10 },
+  { id: 'auto-clicker-4', name: 'Auto-Clicker LV4', baseCost: 5000000, rate: 25 },
+  { id: 'auto-clicker-5', name: 'Auto-Clicker LV5', baseCost: 50000000, rate: 50 }
 ];
 
 // Initialize producers
@@ -139,10 +119,62 @@ const fmt = n => {
 // Update UI
 function render(){
   cashEl.textContent = `Cash: ${fmt(state.cash)}`;
-  incomeEl.textContent = `Income/sec: ${fmt(state.incomePerSec)}`;
+  incomeEl.textContent = `Income/sec: ${fmt(state.incomePerSec)} (Click: $1) | Prestige Lvl: ${state.prestigeLevel}`;
   
   // Render shop items
   itemsEl.innerHTML = '';
+  
+  // Auto-clicker section
+  const autoClickerDiv = document.createElement('div');
+  autoClickerDiv.className = 'item';
+  autoClickerDiv.style.backgroundColor = '#1a3a52';
+  autoClickerDiv.innerHTML = `
+    <div>
+      <div style="font-weight:600">🤖 Auto-Clicker <span class="small">LV${state.autoClickerLevel}</span></div>
+      <div class="small">${state.autoClickRate} clicks/sec</div>
+    </div>
+  `;
+  
+  const autoRight = document.createElement('div');
+  autoRight.style.textAlign = 'right';
+  
+  if (state.autoClickerLevel < AUTO_CLICKER_UPGRADES.length) {
+    const nextUpgrade = AUTO_CLICKER_UPGRADES[state.autoClickerLevel];
+    autoRight.innerHTML = `<div class="small">Cost: ${fmt(nextUpgrade.baseCost)}</div>`;
+    const autoBtn = document.createElement('button');
+    autoBtn.textContent = 'Upgrade';
+    autoBtn.disabled = state.cash < nextUpgrade.baseCost;
+    autoBtn.onclick = () => buyAutoClicker();
+    autoRight.appendChild(autoBtn);
+  } else {
+    autoRight.innerHTML = `<div class="small" style="color: #ffd166;">Max Level</div>`;
+  }
+  autoClickerDiv.appendChild(autoRight);
+  itemsEl.appendChild(autoClickerDiv);
+  
+  // Prestige button
+  const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.1));
+  const prestigeDiv = document.createElement('div');
+  prestigeDiv.className = 'item';
+  prestigeDiv.style.backgroundColor = '#523a1a';
+  prestigeDiv.innerHTML = `
+    <div>
+      <div style="font-weight:600">✨ Prestige Reset</div>
+      <div class="small">Next multiplier: +${(1 + state.prestigeLevel * 0.1).toFixed(1)}x all income</div>
+    </div>
+  `;
+  const prestigeRight = document.createElement('div');
+  prestigeRight.style.textAlign = 'right';
+  prestigeRight.innerHTML = `<div class="small">Requires: ${fmt(prestigeCost)}</div>`;
+  const prestigeBtn = document.createElement('button');
+  prestigeBtn.textContent = 'Prestige';
+  prestigeBtn.disabled = state.totalCashEarned < prestigeCost;
+  prestigeBtn.onclick = () => prestige();
+  prestigeRight.appendChild(prestigeBtn);
+  prestigeDiv.appendChild(prestigeRight);
+  itemsEl.appendChild(prestigeDiv);
+  
+  // Regular producers
   state.producers.forEach(p => {
     const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned));
     const div = document.createElement('div');
@@ -172,7 +204,7 @@ function render(){
     if (alreadyOwned) {
       const div = document.createElement('div');
       div.style.padding = '8px';
-      div.innerHTML = `<div style="color: var(--accent); font-weight: 600">✓ ${u.name}</div>`;
+      div.innerHTML = `<div style="color: #ffd166; font-weight: 600">✓ ${u.name}</div>`;
       upgradesListEl.appendChild(div);
     } else {
       const cost = u.baseCost;
@@ -198,6 +230,7 @@ function buyProducer(id){
     p.owned += 1;
     recalcIncome();
     render();
+    playSound('cash');
   }
 }
 
@@ -208,12 +241,50 @@ function buyUpgrade(id){
     state.upgrades[id] = true;
     recalcIncome();
     render();
+    playSound('cash');
+  }
+}
+
+function buyAutoClicker(){
+  if (state.autoClickerLevel < AUTO_CLICKER_UPGRADES.length) {
+    const upgrade = AUTO_CLICKER_UPGRADES[state.autoClickerLevel];
+    if (state.cash >= upgrade.baseCost) {
+      state.cash -= upgrade.baseCost;
+      state.autoClickerLevel += 1;
+      state.autoClickRate += upgrade.rate;
+      recalcIncome();
+      render();
+      playSound('cash');
+    }
+  }
+}
+
+function prestige(){
+  const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.1));
+  if (state.totalCashEarned >= prestigeCost) {
+    state.prestigeLevel += 1;
+    // Store total earnings before reset
+    state.totalCashEarnedAllTime += state.totalCashEarned;
+    
+    // Reset game but keep prestige
+    const prestigeBonus = 1 + (state.prestigeLevel * 0.1);
+    state.cash = 0;
+    state.totalCashEarned = 0;
+    state.totalClicks = 0;
+    state.autoClickerLevel = 0;
+    state.autoClickRate = 0;
+    state.producers.forEach(p => p.owned = 0);
+    UPGRADES.forEach(u => state.upgrades[u.id] = false);
+    
+    recalcIncome();
+    render();
+    alert(`Prestige! You are now level ${state.prestigeLevel} with ${prestigeBonus.toFixed(1)}x multiplier!`);
   }
 }
 
 function recalcIncome(){
   let baseIncome = state.producers.reduce((s,p)=> s + p.owned * p.ips, 0);
-  let multiplier = 1;
+  let multiplier = 1 + (state.prestigeLevel * 0.1);
   UPGRADES.forEach(u => {
     if(state.upgrades[u.id]){
       multiplier *= u.multiplier;
@@ -222,27 +293,83 @@ function recalcIncome(){
   state.incomePerSec = baseIncome * multiplier;
 }
 
+// Offline earnings on load
+function processOfflineEarnings() {
+  const now = Date.now();
+  const timeDiff = (now - state.lastSaveTime) / 1000; // seconds
+  const offlineEarned = state.incomePerSec * Math.min(timeDiff, 3600); // Cap at 1 hour
+  if (offlineEarned > 0) {
+    state.cash += offlineEarned;
+    state.totalCashEarned += offlineEarned;
+    console.log(`Offline earnings: ${fmt(offlineEarned)} (${Math.min(timeDiff, 3600)}s)`);
+  }
+  state.lastSaveTime = now;
+}
+
 // Passive income tick
 let last = Date.now();
 function tick(){
   const now = Date.now();
   const dt = (now - last) / 1000;
   last = now;
+  
+  // Passive income
   state.cash += state.incomePerSec * dt;
+  state.totalCashEarned += state.incomePerSec * dt;
+  
+  // Auto-clicker
+  if (state.autoClickRate > 0) {
+    const autoClicks = state.autoClickRate * dt;
+    state.cash += autoClicks;
+    state.totalCashEarned += autoClicks;
+    state.totalClicks += autoClicks;
+  }
+  
   render();
   requestAnimationFrame(tick);
 }
 
 // Active click
+let clickCount = 0;
 cashBtn.addEventListener('click', () => {
   state.cash += 1;
+  state.totalCashEarned += 1;
+  state.totalClicks += 1;
+  clickCount += 1;
+  
+  // Visual feedback
+  const pop = document.createElement('div');
+  pop.className = 'cash-pop';
+  pop.textContent = '+$1';
+  pop.style.left = (Math.random() * 100) + 'px';
+  clickAnimEl.appendChild(pop);
+  
+  setTimeout(() => pop.remove(), 700);
+  
+  // Play sound every 5 clicks
+  if (clickCount % 5 === 0) {
+    playSound('click');
+    clickCount = 0;
+  }
+  
   render();
 });
 
+// Simple sound effect (can be silent if not available)
+function playSound(type) {
+  try {
+    const sfx = document.getElementById(`sfx-${type}`);
+    if (sfx) sfx.currentTime = 0;
+    sfx?.play?.();
+  } catch(e) {}
+}
+
 // Save/load (localStorage)
 function save(){
+  state.lastSaveTime = Date.now();
   localStorage.tycoonState = JSON.stringify(state);
 }
+
 function load(){
   try{
     const s = JSON.parse(localStorage.tycoonState || 'null');
@@ -257,9 +384,13 @@ function load(){
         }
       });
       recalcIncome();
+      processOfflineEarnings();
     }
-  }catch(e){}
+  }catch(e){
+    console.error('Load error:', e);
+  }
 }
+
 window.addEventListener('beforeunload', save);
 
 // Init
