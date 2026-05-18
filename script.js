@@ -12,9 +12,12 @@ let state = {
 
 // Define shop items (id, name, baseCost, incomePerSec)
 const SHOP = [
-  { id:'worker', name:'Worker', baseCost: 10, ips: 0.2 },
-  { id:'vendor', name:'Vendor', baseCost: 100, ips: 2 },
-  { id:'factory', name:'Factory', baseCost: 1000, ips: 20 },
+  { id:'worker', name:'Worker', baseCost: 10, ips: 2 },
+  { id:'vendor', name:'Vendor', baseCost: 100, ips: 20 },
+  { id:'factory', name:'Factory', baseCost: 1000, ips: 200 },
+  { id:'town', name:'Town', baseCost: 10000, ips: 2000}
+  { id:'city', name:'City', baseCost: 100000, ips: 20000}
+  { id:'state', name:'State', baseCost: 1000000, ips: 200000}
 ];
 
 // Initialize producers
