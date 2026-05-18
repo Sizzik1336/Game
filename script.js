@@ -100,7 +100,7 @@ const MILESTONES = [
   { id: 'worker-10', producers: 'worker', count: 10, bonus: { cash: 100, multiplier: 1.1 } },
   { id: 'worker-50', producers: 'worker', count: 50, bonus: { cash: 500, multiplier: 1.15 } },
   { id: 'any-50', any: true, count: 50, bonus: { cash: 1000, multiplier: 1.2 } },
-  { id: 'any-100', any: true, count: 100, bonus: { cash: 5000, multiplier: 1.25 } },
+  { id: 'any-100', any: true, count: 100, bonus: { cash: 5000, multiplier: 10 } },
 ];
 
 // Random events
@@ -108,7 +108,7 @@ const EVENTS = [
   { name: 'Lucky Find!', multiplier: 2, duration: 30, chance: 0.05, description: '+100% income for 30 seconds' },
   { name: 'Market Surge', multiplier: 1.5, duration: 60, chance: 0.03, description: '+50% income for 60 seconds' },
   { name: 'Crash!', multiplier: 0.5, duration: 20, chance: 0.02, description: '-50% income for 20 seconds' },
-  { name: 'Aint No Way', multiplier: 1000000, duration: 1000000, chance: 0.0001, description: '1M times income for 1000000 seconds' }
+  { name: 'Aint No Way', multiplier: 1000000, duration: 1000000, chance: 0.00000000000000000000000001, description: '1M times income for 1000000 seconds' }
 ];
 
 // Initialize
@@ -134,7 +134,7 @@ function calculatePrestigeMultiplier() {
   
   // Money-based bonus multiplier
   let moneyBonus = 0;
-  if (state.totalCashEarned >= 1e12) moneyBonus = 0.5;      // $1T+: +50%
+  if (state.totalCashEarned >= 1e12) moneyBonus = 10;      // $1T+: 10x
   else if (state.totalCashEarned >= 1e9) moneyBonus = 0.4;  // $1B+: +40%
   else if (state.totalCashEarned >= 1e6) moneyBonus = 0.3;  // $1M+: +30%
   else if (state.totalCashEarned >= 1e3) moneyBonus = 0.2;  // $1K+: +20%
@@ -145,7 +145,7 @@ function calculatePrestigeMultiplier() {
 
 // Get money bracket description
 function getMoneyBracket() {
-  if (state.totalCashEarned >= 1e12) return 'Trillion+ wealth (50% bonus)';
+  if (state.totalCashEarned >= 1e12) return 'Trillion+ wealth (10x bonus)';
   else if (state.totalCashEarned >= 1e9) return 'Billionaire (40% bonus)';
   else if (state.totalCashEarned >= 1e6) return 'Millionaire (30% bonus)';
   else if (state.totalCashEarned >= 1e3) return 'Wealthy (20% bonus)';
