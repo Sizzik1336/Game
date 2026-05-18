@@ -3,33 +3,55 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Tycoon — Roblox Inspired</title>
+  <title>Tycoon — Enhanced</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div id="game">
     <header>
-      <h1>Tycoon</h1>
-      <div id="cash">Cash: $0</div>
+      <img src="assets/logo.png" alt="logo" id="logo"/>
+      <div class="meta">
+        <div id="cash">Cash: $0</div>
+        <div id="income">Income/sec: $0</div>
+      </div>
+      <div id="players">Players: 0</div>
     </header>
 
     <main>
       <section id="play-area">
-        <button id="cash-btn">+ $1</button>
-        <div id="income">Income/sec: $0</div>
+        <div id="play-card" class="card">
+          <button id="cash-btn" class="big">+ $1</button>
+          <div id="click-anim" class="click-anim"></div>
+        </div>
+
+        <div id="upgrades" class="card">
+          <h3>Upgrades</h3>
+          <div id="upgrades-list"></div>
+        </div>
       </section>
 
-      <aside id="shop">
+      <aside id="shop" class="card">
         <h2>Shop</h2>
         <div id="items"></div>
+        <hr/>
+        <h3>Leaderboard</h3>
+        <ol id="leaderboard"></ol>
       </aside>
     </main>
 
     <footer>
-      <small>Simple tycoon demo • Host on GitHub Pages</small>
+      <small>Enhanced Tycoon Demo • Host client on GitHub Pages • Server for leaderboard</small>
     </footer>
   </div>
 
+  <audio id="sfx-click" src="assets/click.wav"></audio>
+  <audio id="sfx-cash" src="assets/cash1.wav"></audio>
+  <audio id="bg-music" src="assets/bg-music.mp3" loop></audio>
+
+  <script>
+    // Server URL (set to deployed server or ws://localhost:8080)
+    window.WS_URL = "ws://localhost:8080";
+  </script>
   <script src="script.js"></script>
 </body>
 </html>
