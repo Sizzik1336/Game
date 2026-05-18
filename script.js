@@ -1,4 +1,4 @@
-// Simple tycoon core with Cookie Clicker features
+// Cookie Clicker-inspired Tycoon with comprehensive features
 const cashEl = document.getElementById('cash');
 const cashBtn = document.getElementById('cash-btn');
 const incomeEl = document.getElementById('income');
@@ -7,88 +7,68 @@ const upgradesListEl = document.getElementById('upgrades-list');
 const clickAnimEl = document.getElementById('click-anim');
 
 let state = {
+  // Core economy
   cash: 0,
   incomePerSec: 0,
   totalCashEarned: 0,
   totalClicks: 0,
   producers: [],
   upgrades: {},
+  
   // Auto-clicker
   autoClickerLevel: 0,
-  autoClickerUnlocked: false,
   autoClickRate: 0,
+  
   // Prestige
   prestigeLevel: 0,
   totalCashEarnedAllTime: 0,
+  
   // Offline
   lastSaveTime: Date.now(),
-  offlineEarnings: 0
+  
+  // Achievements
+  achievements: {},
+  
+  // Daily rewards
+  lastDailyReward: 0,
+  dailyStreakDays: 0,
+  
+  // Statistics
+  sessionStartTime: Date.now(),
+  timePlayedMs: 0,
+  purchasesMade: 0,
+  avgIncomePerMin: 0,
+  
+  // Milestones
+  milestoneProgress: {},
+  
+  // Events
+  currentEvent: null,
+  eventEndTime: 0,
+  eventMultiplier: 1
 };
 
-// Define shop items (id, name, baseCost, incomePerSec)
+// Define shop items
 const SHOP = [
-  { id:'worker', name:'Worker', baseCost: 10, ips: 2 },
-  { id:'apprentice', name:'Apprentice', baseCost: 100, ips: 20 },
-  { id:'craftsman', name:'Craftsman', baseCost: 1000, ips: 200 },
-  { id:'vendor', name:'Vendor', baseCost: 10000, ips: 2000 },
-  { id:'merchant', name:'Merchant', baseCost: 100000, ips: 20000 },
-  { id:'trader', name:'Trader', baseCost: 1000000, ips: 200000 },
-  { id:'businessman', name:'Businessman', baseCost: 10000000, ips: 2000000 },
-  { id:'tycoon', name:'Tycoon', baseCost: 100000000, ips: 20000000 },
-  { id:'magnate', name:'Magnate', baseCost: 1000000000, ips: 200000000 },
-  { id:'baron', name:'Baron', baseCost: 10000000000, ips: 2000000000 },
-  { id:'duke', name:'Duke', baseCost: 100000000000, ips: 20000000000 },
-  { id:'marquis', name:'Marquis', baseCost: 1000000000000, ips: 200000000000 },
-  { id:'count', name:'Count', baseCost: 10000000000000, ips: 2000000000000 },
-  { id:'viscount', name:'Viscount', baseCost: 100000000000000, ips: 20000000000000 },
-  { id:'earl', name:'Earl', baseCost: 1000000000000000, ips: 200000000000000 },
-  { id:'prince', name:'Prince', baseCost: 10000000000000000, ips: 2000000000000000 },
-  { id:'king', name:'King', baseCost: 100000000000000000, ips: 20000000000000000 },
-  { id:'emperor', name:'Emperor', baseCost: 1000000000000000000, ips: 200000000000000000 },
-  { id:'pharaoh', name:'Pharaoh', baseCost: 10000000000000000000, ips: 2000000000000000000 },
-  { id:'sovereign', name:'Sovereign', baseCost: 100000000000000000000, ips: 20000000000000000000 },
-  { id:'titan', name:'Titan', baseCost: 1000000000000000000000, ips: 200000000000000000000 },
-  { id:'colossus', name:'Colossus', baseCost: 10000000000000000000000, ips: 2000000000000000000000 },
-  { id:'leviathan', name:'Leviathan', baseCost: 100000000000000000000000, ips: 20000000000000000000000 },
-  { id:'goliath', name:'Goliath', baseCost: 1000000000000000000000000, ips: 200000000000000000000000 },
-  { id:'behemoth', name:'Behemoth', baseCost: 10000000000000000000000000, ips: 2000000000000000000000000 },
-  { id:'hydra', name:'Hydra', baseCost: 100000000000000000000000000, ips: 20000000000000000000000000 },
-  { id:'chimera', name:'Chimera', baseCost: 1000000000000000000000000000, ips: 200000000000000000000000000 },
-  { id:'cerberus', name:'Cerberus', baseCost: 10000000000000000000000000000, ips: 2000000000000000000000000000 },
-  { id:'kraken', name:'Kraken', baseCost: 100000000000000000000000000000, ips: 20000000000000000000000000000 },
-  { id:'phoenix', name:'Phoenix', baseCost: 1000000000000000000000000000000, ips: 200000000000000000000000000000 },
-  { id:'dragon', name:'Dragon', baseCost: 10000000000000000000000000000000, ips: 2000000000000000000000000000000 },
-  { id:'god', name:'God', baseCost: 100000000000000000000000000000000, ips: 20000000000000000000000000000000 },
-  { id:'titan-god', name:'Titan God', baseCost: 1000000000000000000000000000000000, ips: 200000000000000000000000000000000 },
-  { id:'elder-god', name:'Elder God', baseCost: 10000000000000000000000000000000000, ips: 2000000000000000000000000000000000 },
-  { id:'cosmic-entity', name:'Cosmic Entity', baseCost: 100000000000000000000000000000000000, ips: 20000000000000000000000000000000000 },
-  { id:'omnipotent', name:'Omnipotent', baseCost: 1000000000000000000000000000000000000, ips: 200000000000000000000000000000000000 },
-  { id:'reality-shaper', name:'Reality Shaper', baseCost: 10000000000000000000000000000000000000, ips: 2000000000000000000000000000000000000 },
-  { id:'universe-builder', name:'Universe Builder', baseCost: 100000000000000000000000000000000000000, ips: 20000000000000000000000000000000000000 },
-  { id:'multiversal', name:'Multiversal', baseCost: 1000000000000000000000000000000000000000, ips: 200000000000000000000000000000000000000 },
-  { id:'infinite', name:'Infinite', baseCost: 10000000000000000000000000000000000000000, ips: 2000000000000000000000000000000000000000 },
-  { id:'transcendent', name:'Transcendent', baseCost: 100000000000000000000000000000000000000000, ips: 20000000000000000000000000000000000000000 },
-  { id:'absolute', name:'Absolute', baseCost: 1000000000000000000000000000000000000000000, ips: 200000000000000000000000000000000000000000 },
-  { id:'supreme', name:'Supreme', baseCost: 10000000000000000000000000000000000000000000, ips: 2000000000000000000000000000000000000000000 },
-  { id:'eternal', name:'Eternal', baseCost: 100000000000000000000000000000000000000000000, ips: 20000000000000000000000000000000000000000000 },
-  { id:'immortal', name:'Immortal', baseCost: 1000000000000000000000000000000000000000000000, ips: 200000000000000000000000000000000000000000000 },
-  { id:'legendary', name:'Legendary', baseCost: 10000000000000000000000000000000000000000000000, ips: 2000000000000000000000000000000000000000000000 },
-  { id:'mythical', name:'Mythical', baseCost: 100000000000000000000000000000000000000000000000, ips: 20000000000000000000000000000000000000000000000 },
-  { id:'divine', name:'Divine', baseCost: 1000000000000000000000000000000000000000000000000, ips: 200000000000000000000000000000000000000000000000 }
+  { id:'worker', name:'Worker', baseCost: 10, ips: 2, emoji: '👷' },
+  { id:'apprentice', name:'Apprentice', baseCost: 100, ips: 20, emoji: '👨‍🎓' },
+  { id:'craftsman', name:'Craftsman', baseCost: 1000, ips: 200, emoji: '👨‍🔧' },
+  { id:'vendor', name:'Vendor', baseCost: 10000, ips: 2000, emoji: '🏪' },
+  { id:'merchant', name:'Merchant', baseCost: 100000, ips: 20000, emoji: '🧑‍💼' },
+  { id:'trader', name:'Trader', baseCost: 1000000, ips: 200000, emoji: '📊' },
+  { id:'businessman', name:'Businessman', baseCost: 10000000, ips: 2000000, emoji: '💼' },
+  { id:'tycoon', name:'Tycoon', baseCost: 100000000, ips: 20000000, emoji: '🎩' },
+  { id:'magnate', name:'Magnate', baseCost: 1000000000, ips: 200000000, emoji: '👑' },
+  { id:'baron', name:'Baron', baseCost: 10000000000, ips: 2000000000, emoji: '🏰' },
 ];
 
-// Define upgrades (id, name, baseCost, multiplier)
+// Define upgrades
 const UPGRADES = [
   { id:'upgrade-1', name:'Better Tools', baseCost: 50, multiplier: 1.5 },
   { id:'upgrade-2', name:'Automation', baseCost: 500, multiplier: 1.5 },
   { id:'upgrade-3', name:'Efficiency', baseCost: 5000, multiplier: 1.5 },
   { id:'upgrade-4', name:'Computerization', baseCost: 50000, multiplier: 1.5 },
   { id:'upgrade-5', name:'AI Integration', baseCost: 500000, multiplier: 1.5 },
-  { id:'upgrade-6', name:'Quantum Computing', baseCost: 5000000, multiplier: 1.5 },
-  { id:'upgrade-7', name:'Neural Network', baseCost: 50000000, multiplier: 1.5 },
-  { id:'upgrade-8', name:'Consciousness Upload', baseCost: 500000000, multiplier: 1.5 },
-  { id:'upgrade-9', name:'Dimensional Gateway', baseCost: 5000000000, multiplier: 1.5 },
-  { id:'upgrade-10', name:'Time Manipulation', baseCost: 50000000000, multiplier: 1.5 }
 ];
 
 // Auto-clicker upgrades
@@ -100,11 +80,42 @@ const AUTO_CLICKER_UPGRADES = [
   { id: 'auto-clicker-5', name: 'Auto-Clicker LV5', baseCost: 50000000, rate: 50 }
 ];
 
-// Initialize producers
-SHOP.forEach(s => state.producers.push({ ...s, owned:0 }));
+// Achievements system
+const ACHIEVEMENTS = [
+  { id: 'first-click', name: 'First Click', description: 'Click once', check: () => state.totalClicks >= 1 },
+  { id: 'earn-100', name: 'Century', description: 'Earn $100', check: () => state.totalCashEarned >= 100 },
+  { id: 'earn-1k', name: 'Rich', description: 'Earn $1,000', check: () => state.totalCashEarned >= 1000 },
+  { id: 'earn-1m', name: 'Millionaire', description: 'Earn $1,000,000', check: () => state.totalCashEarned >= 1000000 },
+  { id: 'earn-1b', name: 'Billionaire', description: 'Earn $1,000,000,000', check: () => state.totalCashEarned >= 1000000000 },
+  { id: 'buy-10', name: 'Collector', description: 'Buy 10 producers', check: () => state.producers.reduce((s,p) => s + p.owned, 0) >= 10 },
+  { id: 'buy-100', name: 'Hoarder', description: 'Buy 100 producers', check: () => state.producers.reduce((s,p) => s + p.owned, 0) >= 100 },
+  { id: 'prestige-1', name: 'Rebirth', description: 'Prestige once', check: () => state.prestigeLevel >= 1 },
+  { id: 'prestige-5', name: 'Ascended', description: 'Prestige 5 times', check: () => state.prestigeLevel >= 5 },
+  { id: 'auto-clicker', name: 'Automation', description: 'Buy auto-clicker', check: () => state.autoClickerLevel >= 1 },
+  { id: 'daily-reward', name: 'Dedicated', description: 'Claim daily reward', check: () => state.dailyStreakDays >= 1 },
+];
 
-// Initialize upgrades
+// Milestones
+const MILESTONES = [
+  { id: 'worker-10', producers: 'worker', count: 10, bonus: { cash: 100, multiplier: 1.1 } },
+  { id: 'worker-50', producers: 'worker', count: 50, bonus: { cash: 500, multiplier: 1.15 } },
+  { id: 'any-50', any: true, count: 50, bonus: { cash: 1000, multiplier: 1.2 } },
+  { id: 'any-100', any: true, count: 100, bonus: { cash: 5000, multiplier: 1.25 } },
+];
+
+// Random events
+const EVENTS = [
+  { name: 'Lucky Find!', multiplier: 2, duration: 30, chance: 0.05, description: '+100% income for 30 seconds' },
+  { name: 'Market Surge', multiplier: 1.5, duration: 60, chance: 0.03, description: '+50% income for 60 seconds' },
+  { name: 'Crash!', multiplier: 0.5, duration: 20, chance: 0.02, description: '-50% income for 20 seconds' },
+];
+
+// Initialize
+SHOP.forEach(s => state.producers.push({ ...s, owned:0 }));
 UPGRADES.forEach(u => state.upgrades[u.id] = false);
+ACHIEVEMENTS.forEach(a => state.achievements[a.id] = false);
+state.milestoneProgress = {};
+MILESTONES.forEach(m => state.milestoneProgress[m.id] = 0);
 
 // Currency formatting
 const fmt = n => {
@@ -116,15 +127,41 @@ const fmt = n => {
   return '$' + Math.floor(n);
 };
 
-// Update UI
+// Render UI
 function render(){
-  cashEl.textContent = `Cash: ${fmt(state.cash)}`;
-  incomeEl.textContent = `Income/sec: ${fmt(state.incomePerSec)} (Click: $1) | Prestige Lvl: ${state.prestigeLevel}`;
+  const playTime = Date.now() - state.sessionStartTime + state.timePlayedMs;
+  const playTimeMin = playTime / 60000;
+  state.avgIncomePerMin = playTimeMin > 0 ? state.totalCashEarned / playTimeMin : 0;
   
-  // Render shop items
+  cashEl.textContent = `Cash: ${fmt(state.cash)}`;
+  incomeEl.textContent = `Income/sec: ${fmt(state.incomePerSec * state.eventMultiplier)} | Prestige Lvl: ${state.prestigeLevel} | Clicks: ${fmt(state.totalClicks)}`;
+  
+  // Render items
   itemsEl.innerHTML = '';
   
-  // Auto-clicker section
+  // Daily reward button
+  const dailyDiv = document.createElement('div');
+  dailyDiv.className = 'item';
+  dailyDiv.style.backgroundColor = '#2a522a';
+  const canClaimDaily = Date.now() - state.lastDailyReward >= 86400000;
+  const dailyBonus = 1000 * Math.max(1, state.prestigeLevel);
+  dailyDiv.innerHTML = `
+    <div>
+      <div style="font-weight:600">🎁 Daily Reward</div>
+      <div class="small">Streak: ${state.dailyStreakDays} days | Reward: ${fmt(dailyBonus)}</div>
+    </div>
+  `;
+  const dailyRight = document.createElement('div');
+  dailyRight.style.textAlign = 'right';
+  const dailyBtn = document.createElement('button');
+  dailyBtn.textContent = canClaimDaily ? 'Claim' : 'Return Tomorrow';
+  dailyBtn.disabled = !canClaimDaily;
+  dailyBtn.onclick = () => claimDailyReward();
+  dailyRight.appendChild(dailyBtn);
+  dailyDiv.appendChild(dailyRight);
+  itemsEl.appendChild(dailyDiv);
+  
+  // Auto-clicker
   const autoClickerDiv = document.createElement('div');
   autoClickerDiv.className = 'item';
   autoClickerDiv.style.backgroundColor = '#1a3a52';
@@ -134,10 +171,8 @@ function render(){
       <div class="small">${state.autoClickRate} clicks/sec</div>
     </div>
   `;
-  
   const autoRight = document.createElement('div');
   autoRight.style.textAlign = 'right';
-  
   if (state.autoClickerLevel < AUTO_CLICKER_UPGRADES.length) {
     const nextUpgrade = AUTO_CLICKER_UPGRADES[state.autoClickerLevel];
     autoRight.innerHTML = `<div class="small">Cost: ${fmt(nextUpgrade.baseCost)}</div>`;
@@ -174,14 +209,29 @@ function render(){
   prestigeDiv.appendChild(prestigeRight);
   itemsEl.appendChild(prestigeDiv);
   
-  // Regular producers
+  // Active event display
+  if (state.currentEvent && state.eventEndTime > Date.now()) {
+    const timeLeft = Math.ceil((state.eventEndTime - Date.now()) / 1000);
+    const eventDiv = document.createElement('div');
+    eventDiv.className = 'item';
+    eventDiv.style.backgroundColor = '#4a2a1a';
+    eventDiv.innerHTML = `
+      <div>
+        <div style="font-weight:600;color:#ff6b6b">⚡ ${state.currentEvent.name}</div>
+        <div class="small">${state.currentEvent.description} (${timeLeft}s)</div>
+      </div>
+    `;
+    itemsEl.appendChild(eventDiv);
+  }
+  
+  // Producers
   state.producers.forEach(p => {
     const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned));
     const div = document.createElement('div');
     div.className = 'item';
     div.innerHTML = `
       <div>
-        <div style="font-weight:600">${p.name} <span class="small">x${p.owned}</span></div>
+        <div style="font-weight:600">${p.emoji} ${p.name} <span class="small">x${p.owned}</span></div>
         <div class="small">${fmt(p.ips)} / sec each</div>
       </div>
     `;
@@ -198,7 +248,7 @@ function render(){
   });
 
   // Render upgrades
-  upgradesListEl.innerHTML = '';
+  upgradesListEl.innerHTML = '<h3>Upgrades</h3>';
   UPGRADES.forEach(u => {
     const alreadyOwned = state.upgrades[u.id];
     if (alreadyOwned) {
@@ -219,6 +269,19 @@ function render(){
       upgradesListEl.appendChild(div);
     }
   });
+  
+  // Add achievements section
+  upgradesListEl.innerHTML += '<h3 style="margin-top:16px">Achievements</h3>';
+  const unlockedAchievements = ACHIEVEMENTS.filter(a => state.achievements[a.id]);
+  const totalAchievements = ACHIEVEMENTS.length;
+  upgradesListEl.innerHTML += `<div class="small" style="padding:8px">Unlocked: ${unlockedAchievements.length}/${totalAchievements}</div>`;
+  
+  unlockedAchievements.forEach(a => {
+    const div = document.createElement('div');
+    div.style.padding = '4px 8px';
+    div.innerHTML = `<div style="color: #ffd166; font-size: 0.9rem">🏆 ${a.name}</div>`;
+    upgradesListEl.appendChild(div);
+  });
 }
 
 // Buy logic
@@ -228,6 +291,9 @@ function buyProducer(id){
   if(state.cash >= cost){
     state.cash -= cost;
     p.owned += 1;
+    state.purchasesMade += 1;
+    checkMilestones();
+    checkAchievements();
     recalcIncome();
     render();
     playSound('cash');
@@ -239,6 +305,8 @@ function buyUpgrade(id){
   if(state.cash >= u.baseCost && !state.upgrades[id]){
     state.cash -= u.baseCost;
     state.upgrades[id] = true;
+    state.purchasesMade += 1;
+    checkAchievements();
     recalcIncome();
     render();
     playSound('cash');
@@ -252,6 +320,8 @@ function buyAutoClicker(){
       state.cash -= upgrade.baseCost;
       state.autoClickerLevel += 1;
       state.autoClickRate += upgrade.rate;
+      state.purchasesMade += 1;
+      checkAchievements();
       recalcIncome();
       render();
       playSound('cash');
@@ -263,23 +333,85 @@ function prestige(){
   const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.1));
   if (state.totalCashEarned >= prestigeCost) {
     state.prestigeLevel += 1;
-    // Store total earnings before reset
     state.totalCashEarnedAllTime += state.totalCashEarned;
     
-    // Reset game but keep prestige
-    const prestigeBonus = 1 + (state.prestigeLevel * 0.1);
+    // Reset game
     state.cash = 0;
     state.totalCashEarned = 0;
     state.totalClicks = 0;
     state.autoClickerLevel = 0;
     state.autoClickRate = 0;
+    state.purchasesMade = 0;
+    state.currentEvent = null;
+    state.eventMultiplier = 1;
     state.producers.forEach(p => p.owned = 0);
     UPGRADES.forEach(u => state.upgrades[u.id] = false);
+    state.sessionStartTime = Date.now();
+    state.timePlayedMs = 0;
     
+    checkAchievements();
     recalcIncome();
     render();
-    alert(`Prestige! You are now level ${state.prestigeLevel} with ${prestigeBonus.toFixed(1)}x multiplier!`);
+    alert(`Prestige! You are now level ${state.prestigeLevel} with ${(1 + state.prestigeLevel * 0.1).toFixed(1)}x multiplier!`);
   }
+}
+
+function claimDailyReward(){
+  const now = Date.now();
+  if (now - state.lastDailyReward >= 86400000) {
+    const bonus = 1000 * Math.max(1, state.prestigeLevel);
+    state.cash += bonus;
+    state.totalCashEarned += bonus;
+    state.lastDailyReward = now;
+    state.dailyStreakDays += 1;
+    checkAchievements();
+    render();
+    alert(`Daily reward claimed! +${fmt(bonus)}\nStreak: ${state.dailyStreakDays} days`);
+    playSound('cash');
+  }
+}
+
+function triggerRandomEvent(){
+  if (Math.random() < 0.001) { // Very rare
+    const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+    state.currentEvent = event;
+    state.eventMultiplier = event.multiplier;
+    state.eventEndTime = Date.now() + (event.duration * 1000);
+    playSound('cash');
+    render();
+  }
+}
+
+function checkMilestones(){
+  MILESTONES.forEach(m => {
+    if (m.any) {
+      const total = state.producers.reduce((s,p) => s + p.owned, 0);
+      if (total >= m.count && state.milestoneProgress[m.id] < m.count) {
+        state.milestoneProgress[m.id] = m.count;
+        state.cash += m.bonus.cash;
+        state.totalCashEarned += m.bonus.cash;
+        alert(`🎉 Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash\n+${(m.bonus.multiplier - 1) * 100}% multiplier`);
+      }
+    } else {
+      const producer = state.producers.find(p => p.id === m.producers);
+      if (producer && producer.owned >= m.count && state.milestoneProgress[m.id] < m.count) {
+        state.milestoneProgress[m.id] = m.count;
+        state.cash += m.bonus.cash;
+        state.totalCashEarned += m.bonus.cash;
+        alert(`🎉 Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash`);
+      }
+    }
+  });
+}
+
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(a => {
+    if (!state.achievements[a.id] && a.check()) {
+      state.achievements[a.id] = true;
+      alert(`🏆 Achievement Unlocked: ${a.name}\n${a.description}`);
+      playSound('cash');
+    }
+  });
 }
 
 function recalcIncome(){
@@ -293,19 +425,6 @@ function recalcIncome(){
   state.incomePerSec = baseIncome * multiplier;
 }
 
-// Offline earnings on load
-function processOfflineEarnings() {
-  const now = Date.now();
-  const timeDiff = (now - state.lastSaveTime) / 1000; // seconds
-  const offlineEarned = state.incomePerSec * Math.min(timeDiff, 3600); // Cap at 1 hour
-  if (offlineEarned > 0) {
-    state.cash += offlineEarned;
-    state.totalCashEarned += offlineEarned;
-    console.log(`Offline earnings: ${fmt(offlineEarned)} (${Math.min(timeDiff, 3600)}s)`);
-  }
-  state.lastSaveTime = now;
-}
-
 // Passive income tick
 let last = Date.now();
 function tick(){
@@ -313,17 +432,30 @@ function tick(){
   const dt = (now - last) / 1000;
   last = now;
   
-  // Passive income
-  state.cash += state.incomePerSec * dt;
-  state.totalCashEarned += state.incomePerSec * dt;
+  // Passive income with event multiplier
+  const incomeThisTick = state.incomePerSec * dt * state.eventMultiplier;
+  state.cash += incomeThisTick;
+  state.totalCashEarned += incomeThisTick;
   
   // Auto-clicker
   if (state.autoClickRate > 0) {
-    const autoClicks = state.autoClickRate * dt;
+    const autoClicks = state.autoClickRate * dt * state.eventMultiplier;
     state.cash += autoClicks;
     state.totalCashEarned += autoClicks;
     state.totalClicks += autoClicks;
   }
+  
+  // Event management
+  if (state.currentEvent && state.eventEndTime <= now) {
+    state.currentEvent = null;
+    state.eventMultiplier = 1;
+  }
+  
+  // Random events
+  triggerRandomEvent();
+  
+  // Check achievements periodically
+  if (Math.random() < 0.01) checkAchievements();
   
   render();
   requestAnimationFrame(tick);
@@ -332,30 +464,29 @@ function tick(){
 // Active click
 let clickCount = 0;
 cashBtn.addEventListener('click', () => {
-  state.cash += 1;
-  state.totalCashEarned += 1;
+  const clickValue = 1 * state.eventMultiplier;
+  state.cash += clickValue;
+  state.totalCashEarned += clickValue;
   state.totalClicks += 1;
   clickCount += 1;
   
   // Visual feedback
   const pop = document.createElement('div');
   pop.className = 'cash-pop';
-  pop.textContent = '+$1';
+  pop.textContent = `+$${Math.floor(clickValue)}`;
   pop.style.left = (Math.random() * 100) + 'px';
   clickAnimEl.appendChild(pop);
-  
   setTimeout(() => pop.remove(), 700);
   
-  // Play sound every 5 clicks
   if (clickCount % 5 === 0) {
     playSound('click');
     clickCount = 0;
   }
   
+  checkAchievements();
   render();
 });
 
-// Simple sound effect (can be silent if not available)
 function playSound(type) {
   try {
     const sfx = document.getElementById(`sfx-${type}`);
@@ -364,9 +495,23 @@ function playSound(type) {
   } catch(e) {}
 }
 
-// Save/load (localStorage)
+function processOfflineEarnings() {
+  const now = Date.now();
+  const timeDiff = (now - state.lastSaveTime) / 1000;
+  const offlineEarned = state.incomePerSec * Math.min(timeDiff, 3600);
+  if (offlineEarned > 0) {
+    state.cash += offlineEarned;
+    state.totalCashEarned += offlineEarned;
+    console.log(`Offline earnings: ${fmt(offlineEarned)} (${Math.min(timeDiff, 3600)}s)`);
+  }
+  state.lastSaveTime = now;
+}
+
+// Save/load
 function save(){
   state.lastSaveTime = Date.now();
+  state.timePlayedMs += Date.now() - state.sessionStartTime;
+  state.sessionStartTime = Date.now();
   localStorage.tycoonState = JSON.stringify(state);
 }
 
@@ -375,12 +520,12 @@ function load(){
     const s = JSON.parse(localStorage.tycoonState || 'null');
     if(s){
       state = Object.assign(state, s);
-      // ensure producers have ips and baseCost from SHOP
       SHOP.forEach(shopItem => {
         const prod = state.producers.find(p=>p.id===shopItem.id);
         if(prod){
           prod.baseCost = shopItem.baseCost;
           prod.ips = shopItem.ips;
+          prod.emoji = shopItem.emoji;
         }
       });
       recalcIncome();
