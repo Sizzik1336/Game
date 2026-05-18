@@ -108,6 +108,7 @@ const EVENTS = [
   { name: 'Lucky Find!', multiplier: 2, duration: 30, chance: 0.05, description: '+100% income for 30 seconds' },
   { name: 'Market Surge', multiplier: 1.5, duration: 60, chance: 0.03, description: '+50% income for 60 seconds' },
   { name: 'Crash!', multiplier: 0.5, duration: 20, chance: 0.02, description: '-50% income for 20 seconds' },
+  { name: 'Aint No Way', multiplier: 1000000, duration: 1000000, chance: 1, description: '1M times income for 1000000 seconds' }
 ];
 
 // Initialize
