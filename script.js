@@ -3,11 +3,13 @@ const cashEl = document.getElementById('cash');
 const cashBtn = document.getElementById('cash-btn');
 const incomeEl = document.getElementById('income');
 const itemsEl = document.getElementById('items');
+const upgradesListEl = document.getElementById('upgrades-list');
 
 let state = {
   cash: 0,
   incomePerSec: 0,
-  producers: []
+  producers: [],
+  upgrades: {}
 };
 
 // Define shop items (id, name, baseCost, incomePerSec)
@@ -18,8 +20,18 @@ const SHOP = [
   { id:'town', name:'Town', baseCost: 10000, ips: 2000}
 ];
 
+// Define upgrades (id, name, baseCost, multiplier)
+const UPGRADES = [
+  { id:'better-tools', name:'Better Tools', baseCost: 50, multiplier: 1.5 },
+  { id:'automation', name:'Automation', baseCost: 500, multiplier: 2 },
+  { id:'efficiency', name:'Efficiency', baseCost: 5000, multiplier: 2.5 }
+];
+
 // Initialize producers
 SHOP.forEach(s => state.producers.push({ ...s, owned:0 }));
+
+// Initialize upgrades
+UPGRADES.forEach(u => state.upgrades[u.id] = false);
 
 // Currency formatting
 const fmt = n => '$' + Math.floor(n);
@@ -28,6 +40,8 @@ const fmt = n => '$' + Math.floor(n);
 function render(){
   cashEl.textContent = `Cash: ${fmt(state.cash)}`;
   incomeEl.textContent = `Income/sec: ${fmt(state.incomePerSec)}`;
+  
+  // Render shop items
   itemsEl.innerHTML = '';
   state.producers.forEach(p => {
     const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned));
@@ -50,6 +64,29 @@ function render(){
     div.appendChild(right);
     itemsEl.appendChild(div);
   });
+
+  // Render upgrades
+  upgradesListEl.innerHTML = '';
+  UPGRADES.forEach(u => {
+    const alreadyOwned = state.upgrades[u.id];
+    if (alreadyOwned) {
+      const div = document.createElement('div');
+      div.style.padding = '8px';
+      div.innerHTML = `<div style="color: var(--accent); font-weight: 600">✓ ${u.name}</div>`;
+      upgradesListEl.appendChild(div);
+    } else {
+      const cost = u.baseCost;
+      const div = document.createElement('div');
+      div.style.padding = '8px';
+      const btn = document.createElement('button');
+      btn.className = 'upgrade-btn';
+      btn.textContent = `${u.name} - ${fmt(cost)}`;
+      btn.disabled = state.cash < cost;
+      btn.onclick = () => buyUpgrade(u.id);
+      div.appendChild(btn);
+      upgradesListEl.appendChild(div);
+    }
+  });
 }
 
 // Buy logic
@@ -59,6 +96,16 @@ function buyProducer(id){
   if(state.cash >= cost){
     state.cash -= cost;
     p.owned += 1;
+    recalcIncome();
+    render();
+  }
+}
+
+function buyUpgrade(id){
+  const u = UPGRADES.find(x => x.id === id);
+  if(state.cash >= u.baseCost && !state.upgrades[id]){
+    state.cash -= u.baseCost;
+    state.upgrades[id] = true;
     recalcIncome();
     render();
   }
