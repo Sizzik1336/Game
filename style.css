@@ -46,17 +46,19 @@ main{display:flex;gap:16px}
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
-#shop{flex:1;max-height:620px;overflow:auto}
+#shop{flex:1;max-height:820px;overflow:auto}
 .item{
   display:flex;
   gap:8px;
-  align-items:center;
+  align-items:flex-start;
+  justify-content:space-between;
   padding:10px;
   border-radius:8px;
   background:rgba(255,255,255,0.02);
   margin-bottom:8px;
   border:1px solid rgba(255,209,102,0.1);
   transition: all 0.2s ease;
+  flex-wrap:wrap;
 }
 .item:hover{
   background:rgba(255,255,255,0.04);
@@ -106,10 +108,35 @@ main{display:flex;gap:16px}
 .small{font-size:0.85rem;color:var(--muted)}
 footer{margin-top:12px;text-align:center;color:var(--muted)}
 
+/* Save buttons */
+button {
+  background: #2a7ae2;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+button:hover:not(:disabled) {
+  background: #3a8ef5;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   main{flex-direction:column}
   #play-area{flex:1}
   #shop{max-height:none}
   #cash-btn.big{padding:16px 24px;font-size:1.1rem}
+  .item {
+    flex-direction: column;
+  }
 }
