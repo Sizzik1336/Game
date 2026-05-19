@@ -34,13 +34,19 @@
         <h2>Shop</h2>
         <div id="items"></div>
         <hr/>
+        <h3>Save System</h3>
+        <button onclick="downloadSave()" style="width: 100%; margin-bottom: 8px;">💾 Download Save</button>
+        <button onclick="uploadSave()" style="width: 100%; margin-bottom: 8px;">📂 Upload Save</button>
+        <input type="file" id="saveFile" accept=".json" style="display:none" onchange="handleFileUpload(event)">
+        <button onclick="clearSave()" style="width: 100%; background-color: #8b0000; margin-bottom: 8px;">🗑️ Clear Data</button>
+        <hr/>
         <h3>Leaderboard</h3>
         <ol id="leaderboard"></ol>
       </aside>
     </main>
 
     <footer>
-      <small>Enhanced Tycoon Demo • Host client on GitHub Pages • Server for leaderboard</small>
+      <small>Enhanced Tycoon Demo • Host client on GitHub Pages • Auto-saves every 30s</small>
     </footer>
   </div>
 
@@ -51,6 +57,53 @@
   <script>
     // Server URL (set to deployed server or ws://localhost:8080)
     window.WS_URL = "ws://localhost:8080";
+    
+    // Save utilities
+    function downloadSave() {
+      const saveData = {
+        state: JSON.parse(localStorage.tycoonState || '{}'),
+        timestamp: new Date().toISOString(),
+        version: '2.0'
+      };
+      const dataStr = JSON.stringify(saveData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `tycoon-save-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+    }
+    
+    function uploadSave() {
+      document.getElementById('saveFile').click();
+    }
+    
+    function handleFileUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const saveData = JSON.parse(e.target.result);
+          localStorage.tycoonState = JSON.stringify(saveData.state);
+          alert('Save file loaded! The page will reload.');
+          location.reload();
+        } catch (err) {
+          alert('Invalid save file!');
+        }
+      };
+      reader.readAsText(file);
+    }
+    
+    function clearSave() {
+      if (confirm('Are you sure? This will delete all progress!')) {
+        localStorage.clear();
+        alert('Data cleared! The page will reload.');
+        location.reload();
+      }
+    }
   </script>
   <script src="script.js"></script>
 </body>
