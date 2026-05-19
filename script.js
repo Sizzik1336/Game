@@ -45,10 +45,16 @@ let state = {
   // Events
   currentEvent: null,
   eventEndTime: 0,
-  eventMultiplier: 1
+  eventMultiplier: 1,
+  
+  // Gambling
+  totalGambled: 0,
+  totalWon: 0,
+  gamblingStreak: 0,
+  gamblingWins: 0,
 };
 
-// Define shop items
+// Define shop items - 20 total
 const SHOP = [
   { id:'worker', name:'Worker', baseCost: 10, ips: 2, emoji: '👷' },
   { id:'apprentice', name:'Apprentice', baseCost: 100, ips: 20, emoji: '👨‍🎓' },
@@ -60,15 +66,37 @@ const SHOP = [
   { id:'tycoon', name:'Tycoon', baseCost: 100000000, ips: 20000000, emoji: '🎩' },
   { id:'magnate', name:'Magnate', baseCost: 1000000000, ips: 200000000, emoji: '👑' },
   { id:'baron', name:'Baron', baseCost: 10000000000, ips: 2000000000, emoji: '🏰' },
+  // NEW 10 ITEMS
+  { id:'duke', name:'Duke', baseCost: 100000000000, ips: 20000000000, emoji: '👧' },
+  { id:'emperor', name:'Emperor', baseCost: 1000000000000, ips: 200000000000, emoji: '👨‍⚖️' },
+  { id:'pharaoh', name:'Pharaoh', baseCost: 10000000000000, ips: 2000000000000, emoji: '🐪' },
+  { id:'god', name:'God', baseCost: 100000000000000, ips: 20000000000000, emoji: '⚡' },
+  { id:'titan', name:'Titan', baseCost: 1000000000000000, ips: 200000000000000, emoji: '🗻' },
+  { id:'cosmic', name:'Cosmic Entity', baseCost: 10000000000000000, ips: 2000000000000000, emoji: '🌌' },
+  { id:'nexus', name:'Nexus Prime', baseCost: 100000000000000000, ips: 20000000000000000, emoji: '🔮' },
+  { id:'infinity', name:'Infinity Engine', baseCost: 1000000000000000000, ips: 200000000000000000, emoji: '♾️' },
+  { id:'omnipotence', name:'Omnipotence', baseCost: 10000000000000000000, ips: 2000000000000000000, emoji: '🌟' },
+  { id:'reality', name:'Reality Warper', baseCost: 100000000000000000000, ips: 20000000000000000000, emoji: '🌀' },
 ];
 
-// Define upgrades
+// Define upgrades - 15 total (5 original + 10 new)
 const UPGRADES = [
   { id:'upgrade-1', name:'Better Tools', baseCost: 50, multiplier: 1.5 },
   { id:'upgrade-2', name:'Automation', baseCost: 500, multiplier: 1.5 },
   { id:'upgrade-3', name:'Efficiency', baseCost: 5000, multiplier: 1.5 },
   { id:'upgrade-4', name:'Computerization', baseCost: 50000, multiplier: 1.5 },
   { id:'upgrade-5', name:'AI Integration', baseCost: 500000, multiplier: 1.5 },
+  // NEW UPGRADES
+  { id:'upgrade-6', name:'Quantum Processing', baseCost: 5000000, multiplier: 2 },
+  { id:'upgrade-7', name:'Neural Networks', baseCost: 50000000, multiplier: 2 },
+  { id:'upgrade-8', name:'Dimensional Shift', baseCost: 500000000, multiplier: 2.5 },
+  { id:'upgrade-9', name:'Reality Manipulation', baseCost: 5000000000, multiplier: 3 },
+  { id:'upgrade-10', name:'Cosmic Power', baseCost: 50000000000, multiplier: 3.5 },
+  { id:'upgrade-11', name:'Infinite Loop', baseCost: 500000000000, multiplier: 4 },
+  { id:'upgrade-12', name:'Time Control', baseCost: 5000000000000, multiplier: 4.5 },
+  { id:'upgrade-13', name:'Universal Domination', baseCost: 50000000000000, multiplier: 5 },
+  { id:'upgrade-14', name:'Godlike Power', baseCost: 500000000000000, multiplier: 5 },
+  { id:'upgrade-15', name:'Ultimate Power', baseCost: 5000000000000000, multiplier: 5 },
 ];
 
 // Auto-clicker upgrades
@@ -80,7 +108,7 @@ const AUTO_CLICKER_UPGRADES = [
   { id: 'auto-clicker-5', name: 'Auto-Clicker LV5', baseCost: 50000000, rate: 50 }
 ];
 
-// Achievements system
+// Achievements system - with gambling achievements
 const ACHIEVEMENTS = [
   { id: 'first-click', name: 'First Click', description: 'Click once', check: () => state.totalClicks >= 1 },
   { id: 'earn-100', name: 'Century', description: 'Earn $100', check: () => state.totalCashEarned >= 100 },
@@ -93,6 +121,9 @@ const ACHIEVEMENTS = [
   { id: 'prestige-5', name: 'Ascended', description: 'Prestige 5 times', check: () => state.prestigeLevel >= 5 },
   { id: 'auto-clicker', name: 'Automation', description: 'Buy auto-clicker', check: () => state.autoClickerLevel >= 1 },
   { id: 'daily-reward', name: 'Dedicated', description: 'Claim daily reward', check: () => state.dailyStreakDays >= 1 },
+  { id: 'gambler', name: 'High Roller', description: 'Gamble 10 times', check: () => state.totalGambled >= 10 },
+  { id: 'lucky-win', name: 'Lucky', description: 'Win 5 gambles', check: () => state.gamblingWins >= 5 },
+  { id: 'jackpot', name: 'Jackpot!', description: 'Hit roulette green', check: () => state.achievements['jackpot'] },
 ];
 
 // Milestones
@@ -100,7 +131,7 @@ const MILESTONES = [
   { id: 'worker-10', producers: 'worker', count: 10, bonus: { cash: 100, multiplier: 1.1 } },
   { id: 'worker-50', producers: 'worker', count: 50, bonus: { cash: 500, multiplier: 1.15 } },
   { id: 'any-50', any: true, count: 50, bonus: { cash: 1000, multiplier: 1.2 } },
-  { id: 'any-100', any: true, count: 100, bonus: { cash: 5000, multiplier: 10 } },
+  { id: 'any-100', any: true, count: 100, bonus: { cash: 5000, multiplier: 1.3 } },
 ];
 
 // Random events
@@ -108,7 +139,6 @@ const EVENTS = [
   { name: 'Lucky Find!', multiplier: 2, duration: 30, chance: 0.05, description: '+100% income for 30 seconds' },
   { name: 'Market Surge', multiplier: 1.5, duration: 60, chance: 0.03, description: '+50% income for 60 seconds' },
   { name: 'Crash!', multiplier: 0.5, duration: 20, chance: 0.02, description: '-50% income for 20 seconds' },
-  { name: 'Aint No Way', multiplier: 1000000, duration: 1000000, chance: 0.00000000000000000000000001, description: '1M times income for 1000000 seconds' }
 ];
 
 // Initialize
@@ -118,8 +148,22 @@ ACHIEVEMENTS.forEach(a => state.achievements[a.id] = false);
 state.milestoneProgress = {};
 MILESTONES.forEach(m => state.milestoneProgress[m.id] = 0);
 
-// Currency formatting
+// Currency formatting - extended to Novendecillion
 const fmt = n => {
+  if (n >= 1e57) return (n / 1e57).toFixed(2) + 'Nd';
+  if (n >= 1e54) return (n / 1e54).toFixed(2) + 'Oc';
+  if (n >= 1e51) return (n / 1e51).toFixed(2) + 'Sp';
+  if (n >= 1e48) return (n / 1e48).toFixed(2) + 'Sx';
+  if (n >= 1e45) return (n / 1e45).toFixed(2) + 'Qi';
+  if (n >= 1e42) return (n / 1e42).toFixed(2) + 'FSh';
+  if (n >= 1e39) return (n / 1e39).toFixed(2) + 'USh';
+  if (n >= 1e36) return (n / 1e36).toFixed(2) + 'De';
+  if (n >= 1e33) return (n / 1e33).toFixed(2) + 'Du';
+  if (n >= 1e30) return (n / 1e30).toFixed(2) + 'No';
+  if (n >= 1e27) return (n / 1e27).toFixed(2) + 'Oc';
+  if (n >= 1e24) return (n / 1e24).toFixed(2) + 'Sp';
+  if (n >= 1e21) return (n / 1e21).toFixed(2) + 'Sx';
+  if (n >= 1e18) return (n / 1e18).toFixed(2) + 'Qi';
   if (n >= 1e15) return (n / 1e15).toFixed(2) + 'Q';
   if (n >= 1e12) return (n / 1e12).toFixed(2) + 'T';
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
@@ -128,22 +172,120 @@ const fmt = n => {
   return '$' + Math.floor(n);
 };
 
-// Calculate prestige multiplier based on current cash
+// Gambling functions
+function playSlots() {
+  const betAmount = 100;
+  if (state.cash < betAmount) return alert('Not enough cash!');
+  
+  state.cash -= betAmount;
+  state.totalGambled += betAmount;
+  
+  const results = [Math.floor(Math.random() * 10), Math.floor(Math.random() * 10), Math.floor(Math.random() * 10)];
+  const msg = `🎰 Slots: [${results[0]}][${results[1]}][${results[2]}]`;
+  
+  if (results[0] === results[1] && results[1] === results[2]) {
+    // Triple match - 50x
+    const winnings = betAmount * 50;
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    alert(`${msg}\n🎉 JACKPOT! Won $${fmt(winnings)}`);
+  } else if (results[0] === results[1] || results[1] === results[2]) {
+    // Double match - 5x
+    const winnings = betAmount * 5;
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    alert(`${msg}\n💰 Won $${fmt(winnings)}`);
+  } else {
+    alert(`${msg}\n😞 Better luck next time!`);
+  }
+  
+  checkAchievements();
+  render();
+  playSound('cash');
+}
+
+function playDice() {
+  const betAmount = 50;
+  if (state.cash < betAmount) return alert('Not enough cash!');
+  
+  state.cash -= betAmount;
+  state.totalGambled += betAmount;
+  
+  const roll = Math.floor(Math.random() * 6) + 1;
+  
+  if (roll === 6) {
+    const winnings = betAmount * 6;
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    alert(`🎲 Rolled a ${roll}!\n🎉 Won $${fmt(winnings)}`);
+  } else if (roll >= 4) {
+    const winnings = Math.floor(betAmount * 1.5);
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    alert(`🎲 Rolled a ${roll}!\n💰 Won $${fmt(winnings)}`);
+  } else {
+    alert(`🎲 Rolled a ${roll}...\n😞 Better luck next time!`);
+  }
+  
+  checkAchievements();
+  render();
+  playSound('cash');
+}
+
+function playRoulette() {
+  const betAmount = 200;
+  if (state.cash < betAmount) return alert('Not enough cash!');
+  
+  state.cash -= betAmount;
+  state.totalGambled += betAmount;
+  
+  const spin = Math.random();
+  
+  if (spin < 0.45) {
+    alert('🎡 Landed on RED!\n😞 Lost!');
+  } else if (spin < 0.9) {
+    const winnings = betAmount * 2;
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    alert(`🎡 Landed on BLACK!\n💰 Won $${fmt(winnings)}`);
+  } else {
+    const winnings = betAmount * 36;
+    state.cash += winnings;
+    state.totalCashEarned += winnings;
+    state.totalWon += winnings;
+    state.gamblingWins += 1;
+    state.achievements['jackpot'] = true;
+    alert(`🎡 Landed on GREEN!\n🎉🎉🎉 JACKPOT!!! Won $${fmt(winnings)}`);
+  }
+  
+  checkAchievements();
+  render();
+  playSound('cash');
+}
+
+// Calculate prestige multiplier
 function calculatePrestigeMultiplier() {
   const baseMultiplier = 1 + (state.prestigeLevel * 0.5);
-  
-  // Money-based bonus multiplier
   let moneyBonus = 0;
-  if (state.totalCashEarned >= 1e12) moneyBonus = 10;      // $1T+: 10x
-  else if (state.totalCashEarned >= 1e9) moneyBonus = 0.4;  // $1B+: +40%
-  else if (state.totalCashEarned >= 1e6) moneyBonus = 0.3;  // $1M+: +30%
-  else if (state.totalCashEarned >= 1e3) moneyBonus = 0.2;  // $1K+: +20%
-  else if (state.totalCashEarned >= 100) moneyBonus = 0.1;  // $100+: +10%
+  if (state.totalCashEarned >= 1e12) moneyBonus = 10;
+  else if (state.totalCashEarned >= 1e9) moneyBonus = 0.4;
+  else if (state.totalCashEarned >= 1e6) moneyBonus = 0.3;
+  else if (state.totalCashEarned >= 1e3) moneyBonus = 0.2;
+  else if (state.totalCashEarned >= 100) moneyBonus = 0.1;
   
   return baseMultiplier * (1 + moneyBonus);
 }
 
-// Get money bracket description
 function getMoneyBracket() {
   if (state.totalCashEarned >= 1e12) return 'Trillion+ wealth (10x bonus)';
   else if (state.totalCashEarned >= 1e9) return 'Billionaire (40% bonus)';
@@ -187,6 +329,46 @@ function render(){
   dailyDiv.appendChild(dailyRight);
   itemsEl.appendChild(dailyDiv);
   
+  // Gambling section
+  const gamblingDiv = document.createElement('div');
+  gamblingDiv.className = 'item';
+  gamblingDiv.style.backgroundColor = '#4a2a2a';
+  gamblingDiv.innerHTML = `
+    <div>
+      <div style="font-weight:600">🎰 Gambling</div>
+      <div class="small">Gambled: ${fmt(state.totalGambled)} | Won: ${fmt(state.totalWon)} | Wins: ${state.gamblingWins}</div>
+    </div>
+  `;
+  const gamblingRight = document.createElement('div');
+  gamblingRight.style.textAlign = 'right';
+  gamblingRight.style.display = 'flex';
+  gamblingRight.style.gap = '4px';
+  gamblingRight.style.flexDirection = 'column';
+  
+  const slots = document.createElement('button');
+  slots.textContent = '🎰 Slots ($100)';
+  slots.onclick = playSlots;
+  slots.style.padding = '4px 8px';
+  slots.style.fontSize = '0.8rem';
+  gamblingRight.appendChild(slots);
+  
+  const dice = document.createElement('button');
+  dice.textContent = '🎲 Dice ($50)';
+  dice.onclick = playDice;
+  dice.style.padding = '4px 8px';
+  dice.style.fontSize = '0.8rem';
+  gamblingRight.appendChild(dice);
+  
+  const roulette = document.createElement('button');
+  roulette.textContent = '🎡 Roulette ($200)';
+  roulette.onclick = playRoulette;
+  roulette.style.padding = '4px 8px';
+  roulette.style.fontSize = '0.8rem';
+  gamblingRight.appendChild(roulette);
+  
+  gamblingDiv.appendChild(gamblingRight);
+  itemsEl.appendChild(gamblingDiv);
+  
   // Auto-clicker
   const autoClickerDiv = document.createElement('div');
   autoClickerDiv.className = 'item';
@@ -213,7 +395,7 @@ function render(){
   autoClickerDiv.appendChild(autoRight);
   itemsEl.appendChild(autoClickerDiv);
   
-  // Prestige button with dynamic multiplier
+  // Prestige button
   const prestigeCost = Math.max(1000, Math.floor(state.totalCashEarned * 0.5));
   const prestigeMultiplier = calculatePrestigeMultiplier();
   const prestigeDiv = document.createElement('div');
@@ -252,9 +434,12 @@ function render(){
     itemsEl.appendChild(eventDiv);
   }
   
-  // Producers
+  // Producers with bulk buying
   state.producers.forEach(p => {
     const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned));
+    const cost10 = Math.ceil(p.baseCost * Math.pow(1.15, p.owned + 10));
+    const cost100 = Math.ceil(p.baseCost * Math.pow(1.15, p.owned + 100));
+    
     const div = document.createElement('div');
     div.className = 'item';
     div.innerHTML = `
@@ -263,14 +448,51 @@ function render(){
         <div class="small">${fmt(p.ips)} / sec each</div>
       </div>
     `;
+    
     const right = document.createElement('div');
     right.style.textAlign = 'right';
+    right.style.display = 'flex';
+    right.style.flexDirection = 'column';
+    right.style.gap = '4px';
+    
     right.innerHTML = `<div class="small">Cost: ${fmt(cost)}</div>`;
-    const btn = document.createElement('button');
-    btn.textContent = 'Buy';
-    btn.disabled = state.cash < cost;
-    btn.onclick = () => buyProducer(p.id);
-    right.appendChild(btn);
+    
+    const btnContainer = document.createElement('div');
+    btnContainer.style.display = 'flex';
+    btnContainer.style.gap = '4px';
+    
+    const btn1 = document.createElement('button');
+    btn1.textContent = '1x';
+    btn1.disabled = state.cash < cost;
+    btn1.style.padding = '4px 8px';
+    btn1.style.fontSize = '0.75rem';
+    btn1.onclick = () => { buyProducerBulk(p.id, 1); };
+    btnContainer.appendChild(btn1);
+    
+    const btn10 = document.createElement('button');
+    btn10.textContent = '10x';
+    btn10.disabled = state.cash < cost10;
+    btn10.style.padding = '4px 8px';
+    btn10.style.fontSize = '0.75rem';
+    btn10.onclick = () => { buyProducerBulk(p.id, 10); };
+    btnContainer.appendChild(btn10);
+    
+    const btn100 = document.createElement('button');
+    btn100.textContent = '100x';
+    btn100.disabled = state.cash < cost100;
+    btn100.style.padding = '4px 8px';
+    btn100.style.fontSize = '0.75rem';
+    btn100.onclick = () => { buyProducerBulk(p.id, 100); };
+    btnContainer.appendChild(btn100);
+    
+    const btnMax = document.createElement('button');
+    btnMax.textContent = 'Max';
+    btnMax.style.padding = '4px 8px';
+    btnMax.style.fontSize = '0.75rem';
+    btnMax.onclick = () => { buyProducerBulk(p.id, 999999); };
+    btnContainer.appendChild(btnMax);
+    
+    right.appendChild(btnContainer);
     div.appendChild(right);
     itemsEl.appendChild(div);
   });
@@ -282,7 +504,7 @@ function render(){
     if (alreadyOwned) {
       const div = document.createElement('div');
       div.style.padding = '8px';
-      div.innerHTML = `<div style="color: #ffd166; font-weight: 600">✓ ${u.name}</div>`;
+      div.innerHTML = `<div style="color: #ffd166; font-weight: 600">✓ ${u.name} (${u.multiplier}x)</div>`;
       upgradesListEl.appendChild(div);
     } else {
       const cost = u.baseCost;
@@ -290,7 +512,7 @@ function render(){
       div.style.padding = '8px';
       const btn = document.createElement('button');
       btn.className = 'upgrade-btn';
-      btn.textContent = `${u.name} - ${fmt(cost)}`;
+      btn.textContent = `${u.name} (${u.multiplier}x) - ${fmt(cost)}`;
       btn.disabled = state.cash < cost;
       btn.onclick = () => buyUpgrade(u.id);
       div.appendChild(btn);
@@ -312,14 +534,26 @@ function render(){
   });
 }
 
-// Buy logic
-function buyProducer(id){
+// Buy logic with bulk
+function buyProducerBulk(id, quantity){
   const p = state.producers.find(x => x.id === id);
-  const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned));
-  if(state.cash >= cost){
-    state.cash -= cost;
-    p.owned += 1;
-    state.purchasesMade += 1;
+  let totalCost = 0;
+  let count = 0;
+  
+  for (let i = 0; i < quantity; i++) {
+    const cost = Math.ceil(p.baseCost * Math.pow(1.15, p.owned + i));
+    if (state.cash >= totalCost + cost) {
+      totalCost += cost;
+      count += 1;
+    } else {
+      break;
+    }
+  }
+  
+  if (count > 0) {
+    state.cash -= totalCost;
+    p.owned += count;
+    state.purchasesMade += count;
     checkMilestones();
     checkAchievements();
     recalcIncome();
@@ -401,7 +635,7 @@ function claimDailyReward(){
 }
 
 function triggerRandomEvent(){
-  if (Math.random() < 0.001) { // Very rare
+  if (Math.random() < 0.001) {
     const event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
     state.currentEvent = event;
     state.eventMultiplier = event.multiplier;
@@ -427,7 +661,7 @@ function checkMilestones(){
         state.milestoneProgress[m.id] = m.count;
         state.cash += m.bonus.cash;
         state.totalCashEarned += m.bonus.cash;
-        alert(`��� Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash`);
+        alert(`🎉 Milestone: ${m.id}\n+${fmt(m.bonus.cash)} cash`);
       }
     }
   });
@@ -565,6 +799,8 @@ function load(){
   }
 }
 
+// Auto-save every 30 seconds
+setInterval(save, 30000);
 window.addEventListener('beforeunload', save);
 
 // Init
